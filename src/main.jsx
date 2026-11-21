@@ -5,40 +5,50 @@ import './styles.css'
 
 const plans = [
   {
-    id: 'arquibancada',
-    name: 'Arquibancada',
-    subtitle: 'Pra começar a coleção',
-    quantity: '1 camisa surpresa',
+    id: 'nacional',
+    name: 'Nacional',
+    subtitle: 'Pra vestir as cores do futebol brasileiro',
+    quantity: '1 camisa de clube brasileiro',
     price: '79,90',
     tag: '',
-    features: ['1 camisa de futebol por mês', 'Times nacionais ou internacionais', 'Curadoria surpresa', 'Frete calculado na finalização'],
+    kind: 'national',
+    features: ['1 camisa de clube brasileiro por mês', 'Escolha vários times favoritos', 'Bloqueie clubes que não quer receber', 'Frete calculado na finalização'],
     color: 'white'
   },
   {
-    id: 'titular',
-    name: 'Time titular',
-    subtitle: 'A escolha da torcida',
-    quantity: '2 camisas surpresa',
-    price: '139,90',
-    tag: 'MAIS ESCOLHIDO',
-    features: ['2 camisas de futebol por mês', 'Mais variedade na coleção', 'Times nacionais ou internacionais', 'Frete calculado na finalização'],
+    id: 'marcas',
+    name: 'Marcas',
+    subtitle: 'Estilo dentro e fora de campo',
+    quantity: '1 camisa de marca esportiva',
+    price: '79,90',
+    tag: 'NOVIDADE',
+    kind: 'brand',
+    features: ['Nike, Adidas, Puma ou marca sortida', 'Escolha sua marca favorita', 'Uma nova surpresa todo mês', 'Frete calculado na finalização'],
     color: 'green'
   },
   {
-    id: 'lenda',
-    name: 'Lenda',
-    subtitle: 'Pra quem vive futebol',
+    id: 'misto',
+    name: 'Misto',
+    subtitle: 'O melhor dos dois mundos',
     quantity: '3 camisas surpresa',
     price: '189,90',
     tag: 'MÁXIMA SURPRESA',
-    features: ['3 camisas de futebol por mês', 'Aumente sua coleção mais rápido', 'Times nacionais ou internacionais', 'Frete calculado na finalização'],
+    kind: 'mixed',
+    features: ['Camisas de clubes brasileiros e marcas', 'Surpresas variadas mês a mês', 'Personalize seus times e marcas favoritas', 'Frete calculado na finalização'],
     color: 'dark'
   }
 ]
 
+const brazilianClubs = [
+  'Athletico-PR', 'Atlético-MG', 'Bahia', 'Botafogo', 'Ceará', 'Corinthians',
+  'Coritiba', 'Cruzeiro', 'Flamengo', 'Fluminense', 'Fortaleza', 'Goiás',
+  'Grêmio', 'Internacional', 'Juventude', 'Mirassol', 'Palmeiras',
+  'Red Bull Bragantino', 'Santos', 'São Paulo', 'Sport', 'Vasco', 'Vitória'
+];
+
 const faqs = [
   ['Como funciona a surpresa?', 'Você escolhe um plano e recebe mensalmente a quantidade de camisas correspondente. Os modelos e times são surpresa — é parte da experiência do clube.'],
-  ['Posso escolher o time?', 'Neste protótipo, a proposta é receber camisas sortidas. Preferências de times, tamanhos e restrições podem ser coletadas no cadastro da assinatura, conforme a operação definir.'],
+  ['Posso escolher meus times?', 'Sim! Nos planos Nacional e Misto, você pode selecionar vários clubes brasileiros favoritos e bloquear os times que não deseja receber.'],
   ['As camisas são originais?', 'A política de autenticidade e procedência precisa ser definida pelo responsável pelo clube antes da abertura das vendas. Esta demonstração não promete autenticidade ou categorias específicas de produto.'],
   ['Posso cancelar?', 'A experiência final deverá permitir o cancelamento conforme as regras comerciais do clube. No protótipo, a assinatura é apenas demonstrativa e não gera cobrança.']
 ]
@@ -75,12 +85,39 @@ function App() {
   const [modal, setModal] = useState(false)
   const [menuOpen, setMenuOpen] = useState(false)
   const [openFaq, setOpenFaq] = useState(0)
+  const [shirtSize, setShirtSize] = useState('')
+  const [favoriteTeams, setFavoriteTeams] = useState([])
+  const [blockedTeams, setBlockedTeams] = useState([])
+  const [favoriteSearch, setFavoriteSearch] = useState('')
+  const [blockedSearch, setBlockedSearch] = useState('')
+  const [brandChoice, setBrandChoice] = useState('sortida')
+  const [mixPreference, setMixPreference] = useState('sortido')
   const currentPlan = plans.find(p => p.id === selected)
 
   const startSubscription = (id) => {
     setSelected(id)
+    setShirtSize('')
+    setFavoriteTeams([])
+    setBlockedTeams([])
+    setFavoriteSearch('')
+    setBlockedSearch('')
+    setBrandChoice('sortida')
+    setMixPreference('sortido')
     setModal(true)
   }
+
+  const toggleTeam = (team, selectedTeams, setter) => {
+    setter(selectedTeams.includes(team)
+      ? selectedTeams.filter(item => item !== team)
+      : [...selectedTeams, team])
+  }
+
+  const filteredFavorites = brazilianClubs.filter(team =>
+    team.toLowerCase().includes(favoriteSearch.toLowerCase()) && !blockedTeams.includes(team)
+  )
+  const filteredBlocked = brazilianClubs.filter(team =>
+    team.toLowerCase().includes(blockedSearch.toLowerCase()) && !favoriteTeams.includes(team)
+  )
 
   return (
     <div className="site-shell">
@@ -187,7 +224,21 @@ function App() {
 
       <footer className="footer"><a href="#inicio" className="footer-brand"><img src="./logo-clube-camisa.png" alt="Logo Clube Camisa Surpresa"/></a><div className="footer-center"><b>CLUBE CAMISA SURPRESA</b><span>TODO MÊS, UMA NOVA SURPRESA.</span></div><div className="footer-right"><a href="#planos">PLANOS</a><a href="#duvidas">DÚVIDAS</a><span>© 2026 CLUBE CAMISA</span></div></footer>
 
-      {modal && <div className="modal-backdrop" role="presentation" onMouseDown={(e) => e.target === e.currentTarget && setModal(false)}><div className="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title"><button className="modal-close" onClick={() => setModal(false)} aria-label="Fechar"><X/></button><div className="modal-logo"><img src="./logo-clube-camisa.png" alt=""/></div><span className="section-kicker">SUA ESCOLHA FOI ESCALADA</span><h2 id="modal-title">BOM GOSTO<br/><em>DE JOGO.</em></h2><div className="modal-plan"><div><span>PLANO SELECIONADO</span><b>{currentPlan.name}</b><small>{currentPlan.quantity}</small></div><strong>R$ {currentPlan.price}<small>/ mês</small></strong></div><p>Este é um protótipo de apresentação. Nenhuma assinatura ou cobrança será realizada.</p><button className="button button-green modal-action" onClick={() => setModal(false)}>ENTENDI <Check size={17}/></button></div></div>}
+      {modal && <div className="modal-backdrop" role="presentation" onMouseDown={(e) => e.target === e.currentTarget && setModal(false)}><div className="modal modal-wide" role="dialog" aria-modal="true" aria-labelledby="modal-title"><button className="modal-close" onClick={() => setModal(false)} aria-label="Fechar"><X/></button><div className="modal-logo"><img src="./logo-clube-camisa.png" alt=""/></div><span className="section-kicker">PERSONALIZE SUA ASSINATURA</span><h2 id="modal-title">SEU JEITO.<br/><em>SUA CAMISA.</em></h2><div className="modal-plan"><div><span>PLANO SELECIONADO</span><b>{currentPlan.name}</b><small>{currentPlan.quantity}</small></div><strong>R$ {currentPlan.price}<small>/ mês</small></strong></div>
+
+        <div className="custom-field"><label htmlFor="shirt-size">Tamanho da camisa *</label><select id="shirt-size" value={shirtSize} onChange={e => setShirtSize(e.target.value)}><option value="">Selecione seu tamanho</option>{['PP', 'P', 'M', 'G', 'GG', 'XGG'].map(size => <option key={size} value={size}>{size}</option>)}</select></div>
+
+        {(currentPlan.kind === 'national' || currentPlan.kind === 'mixed') && <>
+          {currentPlan.kind === 'mixed' && <div className="custom-field"><span className="field-label">Qual tipo de surpresa você prefere?</span><div className="choice-list"><label><input type="radio" name="mix-preference" checked={mixPreference === 'sortido'} onChange={() => setMixPreference('sortido')}/> Deixar totalmente sortido</label><label><input type="radio" name="mix-preference" checked={mixPreference === 'clubes'} onChange={() => setMixPreference('clubes')}/> Dar preferência a clubes brasileiros</label><label><input type="radio" name="mix-preference" checked={mixPreference === 'marcas'} onChange={() => setMixPreference('marcas')}/> Dar preferência a marcas esportivas</label></div></div>}
+          {(currentPlan.kind === 'national' || mixPreference !== 'marcas') && <>
+            <div className="custom-field"><span className="field-label">Seus clubes favoritos <small>(selecione vários)</small></span><input className="team-search" type="search" placeholder="Buscar clube brasileiro..." value={favoriteSearch} onChange={e => setFavoriteSearch(e.target.value)}/><div className="team-grid">{filteredFavorites.map(team => <label key={team} className={favoriteTeams.includes(team) ? 'team-option active' : 'team-option'}><input type="checkbox" checked={favoriteTeams.includes(team)} onChange={() => toggleTeam(team, favoriteTeams, setFavoriteTeams)}/>{team}</label>)}</div><small className="selection-count">{favoriteTeams.length} favorito(s) selecionado(s)</small></div>
+            <div className="custom-field"><span className="field-label">Clubes que você não quer receber <small>(opcional)</small></span><input className="team-search" type="search" placeholder="Buscar clube para bloquear..." value={blockedSearch} onChange={e => setBlockedSearch(e.target.value)}/><div className="team-grid">{filteredBlocked.map(team => <label key={team} className={blockedTeams.includes(team) ? 'team-option blocked' : 'team-option'}><input type="checkbox" checked={blockedTeams.includes(team)} onChange={() => toggleTeam(team, blockedTeams, setBlockedTeams)}/>{team}</label>)}</div><small className="selection-count">{blockedTeams.length} clube(s) bloqueado(s)</small></div>
+          </>}
+        </>}
+
+        {(currentPlan.kind === 'brand' || (currentPlan.kind === 'mixed' && mixPreference !== 'clubes')) && <div className="custom-field"><span className="field-label">Marca esportiva {currentPlan.kind === 'mixed' ? '(opcional)' : '*'}</span><div className="brand-grid">{[['nike', 'Nike'], ['adidas', 'Adidas'], ['puma', 'Puma'], ['sortida', 'Marca sortida']].map(([value, label]) => <label key={value} className={brandChoice === value ? 'brand-option active' : 'brand-option'}><input type="radio" name="brand-choice" checked={brandChoice === value} onChange={() => setBrandChoice(value)}/>{label}</label>)}</div></div>}
+
+        <p className="modal-note">Protótipo demonstrativo: as preferências ainda não são enviadas ou salvas e nenhuma assinatura ou cobrança será realizada.</p><button className="button button-green modal-action" disabled={!shirtSize || (currentPlan.kind === 'national' && favoriteTeams.length === 0)} onClick={() => setModal(false)}>CONFIRMAR PREFERÊNCIAS <Check size={17}/></button></div></div>}
     </div>
   )
 }
