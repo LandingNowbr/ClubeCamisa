@@ -211,7 +211,7 @@ function App() {
             <div className="section-kicker"><span>03</span> ESCALAÇÃO DEFINIDA</div>
             <div className="plans-title">
               <div><h2>QUAL É O SEU<br/><em>JOGO?</em></h2><p>Escolha seu plano e receba sua dose mensal de futebol.</p></div>
-              <div className="monthly-note"><span className="note-star">✳</span><span>ASSINATURA<br/><b>MENSAL</b></span></div>
+              <div className="monthly-note"><span className="note-star">✳</span><span>PEDIDO<br/><b>MENSAL</b></span></div>
             </div>
             <div className="plans-grid">
               {plans.map((plan, index) => (
@@ -220,7 +220,7 @@ function App() {
                   <div className="plan-visual"><Jersey variant={index} small/><span className="quantity-bubble">{index + 1}x</span></div>
                   <div className="plan-info"><h3>{plan.name}</h3><p>{plan.subtitle}</p></div>
                   <div className="plan-quantity">{plan.quantity}</div>
-                  <div className="price"><small>R$</small>{plan.price}<span>/ mês</span></div>
+                  <div className="price"><small>R$</small>{plan.price}<span>/ pedido</span></div>
                   <ul>{plan.features.map(f => <li key={f}><Check size={15}/>{f}</li>)}</ul>
                   <button className={plan.color === 'green' ? 'button button-dark' : 'button button-outline'} onClick={() => startSubscription(plan.id)}>ESCOLHER ESTE PLANO <ArrowRight size={16}/></button>
                 </article>
@@ -318,9 +318,9 @@ function App() {
                 <div className="review-row"><span>Cliente</span><b>{customer.name}</b></div>
                 <div className="review-row"><span>Contato</span><b>{customer.email} · {customer.phone}</b></div>
                 <div className="review-row"><span>Entrega</span><b>{customer.street}, {customer.number}{customer.complement ? ` — ${customer.complement}` : ''}<br/>{customer.neighborhood}, {customer.city} - {customer.state}, CEP {customer.cep}</b></div>
-                <div className="review-total"><span>Total do pedido</span><strong>R$ {currentPlan.price}</strong></div>
+                <div className="review-total"><span>Subtotal · frete a combinar</span><strong>R$ {currentPlan.price}</strong></div>
               </div>
-              <p className="checkout-hint">Ao finalizar, seu pedido ficará aguardando a confirmação manual do pagamento. O link de pagamento do proprietário ainda precisa ser configurado.</p>
+              <p className="checkout-hint">Ao finalizar, seu pedido ficará aguardando a confirmação manual do pagamento. O frete será combinado com a loja e o link de pagamento do proprietário ainda precisa ser configurado.</p>
               <div className="checkout-actions"><button className="button button-outline" onClick={() => setCheckoutStep(3)}>VOLTAR</button><button className="button button-green" onClick={saveDemoOrder}>FINALIZAR PEDIDO <Check size={16}/></button></div>
             </section>}
           </> : <section className="checkout-success">
