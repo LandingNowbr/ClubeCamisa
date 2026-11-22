@@ -92,6 +92,9 @@ function App() {
   const [blockedSearch, setBlockedSearch] = useState('')
   const [brandChoice, setBrandChoice] = useState('sortida')
   const [mixPreference, setMixPreference] = useState('sortido')
+  const [checkoutStep, setCheckoutStep] = useState(1)
+  const [orderComplete, setOrderComplete] = useState(false)
+  const [customer, setCustomer] = useState({ name: '', email: '', phone: '', cep: '', state: '', city: '', neighborhood: '', street: '', number: '', complement: '' })
   const currentPlan = plans.find(p => p.id === selected)
 
   const startSubscription = (id) => {
@@ -103,7 +106,30 @@ function App() {
     setBlockedSearch('')
     setBrandChoice('sortida')
     setMixPreference('sortido')
+    setCheckoutStep(1)
+    setOrderComplete(false)
+    setCustomer({ name: '', email: '', phone: '', cep: '', state: '', city: '', neighborhood: '', street: '', number: '', complement: '' })
     setModal(true)
+  }
+
+  const updateCustomer = (field, value) => setCustomer(prev => ({ ...prev, [field]: value }))
+
+  const saveDemoOrder = () => {
+    const order = {
+      id: `CCS-${Date.now()}`,
+      createdAt: new Date().toISOString(),
+      status: 'Aguardando confirmação do pagamento',
+      plan: { id: currentPlan.id, name: currentPlan.name, price: currentPlan.price, quantity: currentPlan.quantity },
+      customer,
+      preferences: { shirtSize, favoriteTeams, blockedTeams, brandChoice, mixPreference }
+    }
+    try {
+      const previous = JSON.parse(localStorage.getItem('clube-camisa-orders') || '[]')
+      localStorage.setItem('clube-camisa-orders', JSON.stringify([...previous, order]))
+    } catch (error) {
+      console.warn('Não foi possível salvar o pedido neste navegador.', error)
+    }
+    setOrderComplete(true)
   }
 
   const toggleTeam = (team, selectedTeams, setter) => {
@@ -224,21 +250,90 @@ function App() {
 
       <footer className="footer"><a href="#inicio" className="footer-brand"><img src="./logo-clube-camisa.png" alt="Logo Clube Camisa Surpresa"/></a><div className="footer-center"><b>CLUBE CAMISA SURPRESA</b><span>TODO MÊS, UMA NOVA SURPRESA.</span></div><div className="footer-right"><a href="#planos">PLANOS</a><a href="#duvidas">DÚVIDAS</a><span>© 2026 CLUBE CAMISA</span></div></footer>
 
-      {modal && <div className="modal-backdrop" role="presentation" onMouseDown={(e) => e.target === e.currentTarget && setModal(false)}><div className="modal modal-wide" role="dialog" aria-modal="true" aria-labelledby="modal-title"><button className="modal-close" onClick={() => setModal(false)} aria-label="Fechar"><X/></button><div className="modal-logo"><img src="./logo-clube-camisa.png" alt=""/></div><span className="section-kicker">PERSONALIZE SUA ASSINATURA</span><h2 id="modal-title">SEU JEITO.<br/><em>SUA CAMISA.</em></h2><div className="modal-plan"><div><span>PLANO SELECIONADO</span><b>{currentPlan.name}</b><small>{currentPlan.quantity}</small></div><strong>R$ {currentPlan.price}<small>/ mês</small></strong></div>
+      {modal && <div className="modal-backdrop checkout-backdrop" role="presentation" onMouseDown={(e) => e.target === e.currentTarget && setModal(false)}>
+        <div className="modal modal-wide checkout-modal" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+          <button className="modal-close" onClick={() => setModal(false)} aria-label="Fechar"><X/></button>
+          {!orderComplete ? <>
+            <div className="checkout-heading">
+              <div className="modal-logo"><img src="./logo-clube-camisa.png" alt=""/></div>
+              <span className="section-kicker">FINALIZAÇÃO DO PEDIDO</span>
+              <h2 id="modal-title">SUA PRÓXIMA<br/><em>CAMISA COMEÇA AQUI.</em></h2>
+            </div>
+            <div className="checkout-progress" aria-label={`Etapa ${checkoutStep} de 4`}>
+              {['Preferências', 'Seus dados', 'Entrega', 'Revisão'].map((label, index) => <div key={label} className={checkoutStep >= index + 1 ? 'progress-step active' : 'progress-step'}><span>{index + 1}</span><small>{label}</small></div>)}
+            </div>
+            <div className="checkout-plan-strip">
+              <div><span>SEU PLANO</span><b>{currentPlan.name}</b><small>{currentPlan.quantity}</small></div>
+              <strong>R$ {currentPlan.price}</strong>
+            </div>
 
-        <div className="custom-field"><label htmlFor="shirt-size">Tamanho da camisa *</label><select id="shirt-size" value={shirtSize} onChange={e => setShirtSize(e.target.value)}><option value="">Selecione seu tamanho</option>{['PP', 'P', 'M', 'G', 'GG', 'XGG'].map(size => <option key={size} value={size}>{size}</option>)}</select></div>
+            {checkoutStep === 1 && <section className="checkout-panel">
+              <span className="checkout-eyebrow">ETAPA 01 / 04</span><h3>PERSONALIZE SUA CAMISA</h3>
+              <div className="custom-field"><label htmlFor="shirt-size">Tamanho da camisa *</label><select id="shirt-size" value={shirtSize} onChange={e => setShirtSize(e.target.value)}><option value="">Selecione seu tamanho</option>{['PP', 'P', 'M', 'G', 'GG', 'XGG'].map(size => <option key={size} value={size}>{size}</option>)}</select></div>
+              {(currentPlan.kind === 'national' || currentPlan.kind === 'mixed') && <>
+                {currentPlan.kind === 'mixed' && <div className="custom-field"><span className="field-label">Qual tipo de surpresa você prefere?</span><div className="choice-list"><label><input type="radio" name="mix-preference" checked={mixPreference === 'sortido'} onChange={() => setMixPreference('sortido')}/> Deixar totalmente sortido</label><label><input type="radio" name="mix-preference" checked={mixPreference === 'clubes'} onChange={() => setMixPreference('clubes')}/> Dar preferência a clubes brasileiros</label><label><input type="radio" name="mix-preference" checked={mixPreference === 'marcas'} onChange={() => setMixPreference('marcas')}/> Dar preferência a marcas esportivas</label></div></div>}
+                {(currentPlan.kind === 'national' || mixPreference !== 'marcas') && <>
+                  <div className="custom-field"><span className="field-label">Seus clubes favoritos <small>(selecione vários)</small></span><input className="team-search" type="search" placeholder="Buscar clube brasileiro..." value={favoriteSearch} onChange={e => setFavoriteSearch(e.target.value)}/><div className="team-grid">{filteredFavorites.map(team => <label key={team} className={favoriteTeams.includes(team) ? 'team-option active' : 'team-option'}><input type="checkbox" checked={favoriteTeams.includes(team)} onChange={() => toggleTeam(team, favoriteTeams, setFavoriteTeams)}/>{team}</label>)}</div><small className="selection-count">{favoriteTeams.length} favorito(s) selecionado(s)</small></div>
+                  <div className="custom-field"><span className="field-label">Clubes que você não quer receber <small>(opcional)</small></span><input className="team-search" type="search" placeholder="Buscar clube para bloquear..." value={blockedSearch} onChange={e => setBlockedSearch(e.target.value)}/><div className="team-grid">{filteredBlocked.map(team => <label key={team} className={blockedTeams.includes(team) ? 'team-option blocked' : 'team-option'}><input type="checkbox" checked={blockedTeams.includes(team)} onChange={() => toggleTeam(team, blockedTeams, setBlockedTeams)}/>{team}</label>)}</div><small className="selection-count">{blockedTeams.length} clube(s) bloqueado(s)</small></div>
+                </>}
+              </>}
+              {(currentPlan.kind === 'brand' || (currentPlan.kind === 'mixed' && mixPreference !== 'clubes')) && <div className="custom-field"><span className="field-label">Marca esportiva {currentPlan.kind === 'mixed' ? '(opcional)' : '*'}</span><div className="brand-grid">{[['nike', 'Nike'], ['adidas', 'Adidas'], ['puma', 'Puma'], ['sortida', 'Marca sortida']].map(([value, label]) => <label key={value} className={brandChoice === value ? 'brand-option active' : 'brand-option'}><input type="radio" name="brand-choice" checked={brandChoice === value} onChange={() => setBrandChoice(value)}/>{label}</label>)}</div></div>}
+              <p className="checkout-hint">As preferências ajudam nossa equipe a preparar sua surpresa.</p>
+              <div className="checkout-actions"><button className="button button-green" disabled={!shirtSize || (currentPlan.kind === 'national' && favoriteTeams.length === 0)} onClick={() => setCheckoutStep(2)}>CONTINUAR <ArrowRight size={16}/></button></div>
+            </section>}
 
-        {(currentPlan.kind === 'national' || currentPlan.kind === 'mixed') && <>
-          {currentPlan.kind === 'mixed' && <div className="custom-field"><span className="field-label">Qual tipo de surpresa você prefere?</span><div className="choice-list"><label><input type="radio" name="mix-preference" checked={mixPreference === 'sortido'} onChange={() => setMixPreference('sortido')}/> Deixar totalmente sortido</label><label><input type="radio" name="mix-preference" checked={mixPreference === 'clubes'} onChange={() => setMixPreference('clubes')}/> Dar preferência a clubes brasileiros</label><label><input type="radio" name="mix-preference" checked={mixPreference === 'marcas'} onChange={() => setMixPreference('marcas')}/> Dar preferência a marcas esportivas</label></div></div>}
-          {(currentPlan.kind === 'national' || mixPreference !== 'marcas') && <>
-            <div className="custom-field"><span className="field-label">Seus clubes favoritos <small>(selecione vários)</small></span><input className="team-search" type="search" placeholder="Buscar clube brasileiro..." value={favoriteSearch} onChange={e => setFavoriteSearch(e.target.value)}/><div className="team-grid">{filteredFavorites.map(team => <label key={team} className={favoriteTeams.includes(team) ? 'team-option active' : 'team-option'}><input type="checkbox" checked={favoriteTeams.includes(team)} onChange={() => toggleTeam(team, favoriteTeams, setFavoriteTeams)}/>{team}</label>)}</div><small className="selection-count">{favoriteTeams.length} favorito(s) selecionado(s)</small></div>
-            <div className="custom-field"><span className="field-label">Clubes que você não quer receber <small>(opcional)</small></span><input className="team-search" type="search" placeholder="Buscar clube para bloquear..." value={blockedSearch} onChange={e => setBlockedSearch(e.target.value)}/><div className="team-grid">{filteredBlocked.map(team => <label key={team} className={blockedTeams.includes(team) ? 'team-option blocked' : 'team-option'}><input type="checkbox" checked={blockedTeams.includes(team)} onChange={() => toggleTeam(team, blockedTeams, setBlockedTeams)}/>{team}</label>)}</div><small className="selection-count">{blockedTeams.length} clube(s) bloqueado(s)</small></div>
-          </>}
-        </>}
+            {checkoutStep === 2 && <section className="checkout-panel">
+              <span className="checkout-eyebrow">ETAPA 02 / 04</span><h3>QUEM VAI RECEBER?</h3><p className="checkout-description">Precisamos dos seus dados para identificar o pedido e entrar em contato sobre a entrega.</p>
+              <div className="checkout-fields">
+                <div className="custom-field field-full"><label htmlFor="customer-name">Nome completo *</label><input id="customer-name" value={customer.name} onChange={e => updateCustomer('name', e.target.value)} placeholder="Como podemos te chamar?"/></div>
+                <div className="custom-field"><label htmlFor="customer-email">E-mail *</label><input id="customer-email" type="email" value={customer.email} onChange={e => updateCustomer('email', e.target.value)} placeholder="voce@email.com"/></div>
+                <div className="custom-field"><label htmlFor="customer-phone">WhatsApp com DDD *</label><input id="customer-phone" type="tel" value={customer.phone} onChange={e => updateCustomer('phone', e.target.value)} placeholder="(11) 99999-9999"/></div>
+              </div>
+              <div className="checkout-actions"><button className="button button-outline" onClick={() => setCheckoutStep(1)}>VOLTAR</button><button className="button button-green" disabled={!customer.name.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(customer.email) || customer.phone.replace(/\D/g, '').length < 10} onClick={() => setCheckoutStep(3)}>CONTINUAR <ArrowRight size={16}/></button></div>
+            </section>}
 
-        {(currentPlan.kind === 'brand' || (currentPlan.kind === 'mixed' && mixPreference !== 'clubes')) && <div className="custom-field"><span className="field-label">Marca esportiva {currentPlan.kind === 'mixed' ? '(opcional)' : '*'}</span><div className="brand-grid">{[['nike', 'Nike'], ['adidas', 'Adidas'], ['puma', 'Puma'], ['sortida', 'Marca sortida']].map(([value, label]) => <label key={value} className={brandChoice === value ? 'brand-option active' : 'brand-option'}><input type="radio" name="brand-choice" checked={brandChoice === value} onChange={() => setBrandChoice(value)}/>{label}</label>)}</div></div>}
+            {checkoutStep === 3 && <section className="checkout-panel">
+              <span className="checkout-eyebrow">ETAPA 03 / 04</span><h3>ONDE ENTREGAMOS?</h3><p className="checkout-description">Informe o endereço completo para receber sua camisa.</p>
+              <div className="checkout-fields">
+                <div className="custom-field"><label htmlFor="customer-cep">CEP *</label><input id="customer-cep" inputMode="numeric" value={customer.cep} onChange={e => updateCustomer('cep', e.target.value)} placeholder="00000-000"/></div>
+                <div className="custom-field"><label htmlFor="customer-state">Estado (UF) *</label><input id="customer-state" maxLength="2" value={customer.state} onChange={e => updateCustomer('state', e.target.value.toUpperCase())} placeholder="SP"/></div>
+                <div className="custom-field"><label htmlFor="customer-city">Cidade *</label><input id="customer-city" value={customer.city} onChange={e => updateCustomer('city', e.target.value)} placeholder="Sua cidade"/></div>
+                <div className="custom-field"><label htmlFor="customer-neighborhood">Bairro *</label><input id="customer-neighborhood" value={customer.neighborhood} onChange={e => updateCustomer('neighborhood', e.target.value)} placeholder="Seu bairro"/></div>
+                <div className="custom-field field-full"><label htmlFor="customer-street">Rua / Avenida *</label><input id="customer-street" value={customer.street} onChange={e => updateCustomer('street', e.target.value)} placeholder="Nome da rua"/></div>
+                <div className="custom-field"><label htmlFor="customer-number">Número *</label><input id="customer-number" value={customer.number} onChange={e => updateCustomer('number', e.target.value)} placeholder="Nº"/></div>
+                <div className="custom-field"><label htmlFor="customer-complement">Complemento</label><input id="customer-complement" value={customer.complement} onChange={e => updateCustomer('complement', e.target.value)} placeholder="Apto, bloco, referência..."/></div>
+              </div>
+              <div className="checkout-actions"><button className="button button-outline" onClick={() => setCheckoutStep(2)}>VOLTAR</button><button className="button button-green" disabled={!customer.cep.trim() || !customer.state.trim() || !customer.city.trim() || !customer.neighborhood.trim() || !customer.street.trim() || !customer.number.trim()} onClick={() => setCheckoutStep(4)}>REVISAR PEDIDO <ArrowRight size={16}/></button></div>
+            </section>}
 
-        <p className="modal-note">Protótipo demonstrativo: as preferências ainda não são enviadas ou salvas e nenhuma assinatura ou cobrança será realizada.</p><button className="button button-green modal-action" disabled={!shirtSize || (currentPlan.kind === 'national' && favoriteTeams.length === 0)} onClick={() => setModal(false)}>CONFIRMAR PREFERÊNCIAS <Check size={17}/></button></div></div>}
+            {checkoutStep === 4 && <section className="checkout-panel">
+              <span className="checkout-eyebrow">ETAPA 04 / 04</span><h3>CONFIRA SEU PEDIDO</h3>
+              <div className="review-card">
+                <div className="review-row"><span>Plano</span><b>{currentPlan.name} — R$ {currentPlan.price}</b></div>
+                <div className="review-row"><span>Camisa</span><b>Tamanho {shirtSize} · {currentPlan.quantity}</b></div>
+                {favoriteTeams.length > 0 && <div className="review-row"><span>Clubes favoritos</span><b>{favoriteTeams.join(', ')}</b></div>}
+                {blockedTeams.length > 0 && <div className="review-row"><span>Clubes bloqueados</span><b>{blockedTeams.join(', ')}</b></div>}
+                {(currentPlan.kind === 'brand' || currentPlan.kind === 'mixed') && <div className="review-row"><span>Marca</span><b>{{nike:'Nike',adidas:'Adidas',puma:'Puma',sortida:'Marca sortida'}[brandChoice]}</b></div>}
+                <div className="review-divider"/>
+                <div className="review-row"><span>Cliente</span><b>{customer.name}</b></div>
+                <div className="review-row"><span>Contato</span><b>{customer.email} · {customer.phone}</b></div>
+                <div className="review-row"><span>Entrega</span><b>{customer.street}, {customer.number}{customer.complement ? ` — ${customer.complement}` : ''}<br/>{customer.neighborhood}, {customer.city} - {customer.state}, CEP {customer.cep}</b></div>
+                <div className="review-total"><span>Total do pedido</span><strong>R$ {currentPlan.price}</strong></div>
+              </div>
+              <p className="checkout-hint">Ao finalizar, seu pedido ficará aguardando a confirmação manual do pagamento. O link de pagamento do proprietário ainda precisa ser configurado.</p>
+              <div className="checkout-actions"><button className="button button-outline" onClick={() => setCheckoutStep(3)}>VOLTAR</button><button className="button button-green" onClick={saveDemoOrder}>FINALIZAR PEDIDO <Check size={16}/></button></div>
+            </section>}
+          </> : <section className="checkout-success">
+            <div className="success-mark"><Check size={34}/></div>
+            <span className="section-kicker">PEDIDO REGISTRADO NESTE DISPOSITIVO</span>
+            <h2>FALTA POUCO<br/><em>PRA SURPRESA.</em></h2>
+            <p>Seu pedido foi salvo localmente como demonstração. Ele ainda não foi enviado para a loja e o pagamento não foi realizado.</p>
+            <div className="success-details"><span>PLANO</span><b>{currentPlan.name} · R$ {currentPlan.price}</b><span>CLIENTE</span><b>{customer.name}</b><span>STATUS</span><b>Aguardando confirmação do pagamento</b></div>
+            <p className="checkout-hint">Para receber pedidos de verdade, falta conectar o formulário a um banco de dados ou canal de atendimento e configurar o link de pagamento do proprietário.</p>
+            <button className="button button-green modal-action" onClick={() => setModal(false)}>VOLTAR À LOJA <ArrowRight size={16}/></button>
+          </section>}
+        </div>
+      </div>}
     </div>
   )
 }
